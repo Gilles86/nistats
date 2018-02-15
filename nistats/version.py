@@ -52,7 +52,11 @@ REQUIRED_MODULE_METADATA = (
     ('patsy', {
         'min_version': '0.2.0',
         'install_info': _NISTATS_INSTALL_MSG}),
-)
+    ('skimage', {
+        'min_version': '0.13.0',
+        'required_at_installation': True,
+        'install_info': _NISTATS_INSTALL_MSG}),
+    )
 
 OPTIONAL_MATPLOTLIB_MIN_VERSION = '1.3.1'
 OPTIONAL_BOTO3_MIN_VERSION = '1.0.0'
