@@ -2,9 +2,7 @@
 Example of second level design matrix
 =====================================
 
-Requires matplotlib
-
-Author : Martin Perez-Guevara: 2016
+Requires matplotlib.
 
 """
 
@@ -13,8 +11,8 @@ try:
 except ImportError:
     raise RuntimeError("This script needs the matplotlib library")
 
-from nistats.design_matrix import (create_second_level_design,
-                                   plot_design_matrix)
+from nistats.design_matrix import create_second_level_design
+from nistats.reporting import plot_design_matrix
 import pandas as pd
 
 #########################################################################

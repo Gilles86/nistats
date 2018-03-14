@@ -33,7 +33,7 @@ print_conda_requirements() {
     # if yes which version to install. For example:
     #   - for numpy, NUMPY_VERSION is used
     #   - for scikit-learn, SCIKIT_LEARN_VERSION is used
-    TO_INSTALL_ALWAYS="pip nose"
+    TO_INSTALL_ALWAYS="pip nose libgfortran=1.0=0 nomkl"
     REQUIREMENTS="$TO_INSTALL_ALWAYS"
     TO_INSTALL_MAYBE="python numpy scipy matplotlib scikit-learn pandas"
     for PACKAGE in $TO_INSTALL_MAYBE; do
@@ -93,7 +93,9 @@ if [[ "$DISTRIB" == "neurodebian" ]]; then
     create_new_venv
     bash <(wget -q -O- http://neuro.debian.net/_files/neurodebian-travis.sh)
     sudo apt-get install -qq python-scipy python-nose python-nibabel\
-         python-sklearn python-pandas python-nilearn python-patsy
+         python-sklearn python-pandas python-nilearn python-patsy\
+         python-pip
+    pip install boto3
 
 elif [[ "$DISTRIB" == "conda" ]]; then
     create_new_conda_env
@@ -101,18 +103,17 @@ elif [[ "$DISTRIB" == "conda" ]]; then
     # always be installed eventually. Defining NIBABEL_VERSION is only
     # useful if you happen to want a specific nibabel version rather
     # than the latest available one.
+    pip install pip --upgrade
     if [ -n "$NIBABEL_VERSION" ]; then
         pip install nibabel=="$NIBABEL_VERSION"
     fi
-    if [["$PYTHON_VERSION" == "2.6"]]; then
-        # Install the minimum supported version of nilearn and patsy
-        pip install nilearn==0.2.0
-        pip install patsy==0.2.0
-    else
-        # Install the latest available version of nilearn and patsy
-        pip install nilearn
-        pip install patsy
-    fi
+    # Install the latest available version of nilearn
+    pip install nilearn
+    # Install the latest available version of patsy
+    pip install patsy
+    # Install the latest available version of boto3
+    pip install boto3
+
 
 else
     echo "Unrecognized distribution ($DISTRIB); cannot setup travis environment."

@@ -71,7 +71,7 @@ copyright = u'The nistats developers 2010-2016'
 # built documents.
 #
 # The short X.Y version.
-version = ''
+version = '0.0'
 # The full version, including alpha/beta/rc tags.
 import nistats
 release = nistats.__version__
@@ -265,6 +265,7 @@ intersphinx_mapping = {
     'http://matplotlib.org/': None,
     'http://scikit-learn.org/stable': None,
     'http://nipy.org/nibabel': None,
+    'http://nilearn.github.io': None,
     # add line for nilearn
     # add line for patsy
     #'http://scikit-image.org/docs/0.8.0/': None,
@@ -281,7 +282,7 @@ extlinks = {
 sphinx_gallery_conf = {
     'doc_module'        : 'nistats',
     'reference_url'     : {
-        'nilearn': 'http://nilearn.github.io/index.html',
+        'nilearn': 'http://nilearn.github.io',
         'matplotlib': 'http://matplotlib.org',
         'numpy': 'http://docs.scipy.org/doc/numpy-1.6.0',
         'scipy': 'http://docs.scipy.org/doc/scipy-0.11.0/reference',
