@@ -3,11 +3,11 @@ Examples of design matrices
 ===========================
 
 Three examples of design matrices specification and computation
+for first-level fMRI data analysis.
 (event-related design, block design, FIR design)
 
 Requires matplotlib
 
-Author : Bertrand Thirion: 2009-2015
 """
 import numpy as np
 
@@ -16,7 +16,8 @@ try:
 except ImportError:
     raise RuntimeError("This script needs the matplotlib library")
 
-from nistats.design_matrix import make_design_matrix, plot_design_matrix
+from nistats.design_matrix import make_design_matrix
+from nistats.reporting import plot_design_matrix
 import pandas as pd
 
 
