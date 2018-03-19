@@ -9,7 +9,7 @@ import os
 import shutil
 import numpy as np
 
-from nibabel import load, Nifti1Image, save
+from nibabel import load, Nifti1Image
 
 from nistats.first_level_model import (mean_scaling, run_glm, FirstLevelModel,
                                        first_level_models_from_bids)
@@ -35,12 +35,12 @@ def write_fake_fmri_data(shapes, rk=3, affine=np.eye(4)):
         fmri_files.append('fmri_run%d.nii' % i)
         data = np.random.randn(*shape)
         data[1:-1, 1:-1, 1:-1] += 100
-        save(Nifti1Image(data, affine), fmri_files[-1])
+        Nifti1Image(data, affine).to_filename(fmri_files[-1])
         design_files.append('dmtx_%d.csv' % i)
         pd.DataFrame(np.random.randn(shape[3], rk),
                      columns=['', '', '']).to_csv(design_files[-1])
-    save(Nifti1Image((np.random.rand(*shape[:3]) > .5).astype(np.int8),
-                     affine), mask_file)
+    Nifti1Image((np.random.rand(*shape[:3]) > .5).astype(np.int8),
+                affine).to_filename(mask_file)
     return mask_file, fmri_files, design_files
 
 
@@ -112,7 +112,7 @@ def test_high_level_glm_with_paths():
         multi_session_model = FirstLevelModel(mask=None).fit(
             fmri_files, design_matrices=design_files)
         z_image = multi_session_model.compute_contrast(np.eye(rk)[1])
-        assert_array_equal(z_image.get_affine(), load(mask_file).get_affine())
+        assert_array_equal(z_image.affine, load(mask_file).affine)
         assert_true(z_image.get_data().std() < 3.)
         # Delete objects attached to files to avoid WindowsError when deleting
         # temporary directory
@@ -267,10 +267,11 @@ def test_first_level_model_glm_computation():
         model = model.fit(func_img, paradigm)
         labels1 = model.labels_[0]
         results1 = model.results_[0]
-        labels2, results2 = run_glm(model.masker_.transform(func_img),
-                                    model.design_matrices_[0], 'ar1')
+        labels2, results2 = run_glm(
+            model.masker_.transform(func_img),
+            model.design_matrices_[0].as_matrix(), 'ar1')
         # ar not giving consistent results in python 3.4
-        # assert_almost_equal(labels1, labels2, decimal=1) ####FIX
+        # assert_almost_equal(labels1, labels2, decimal=2) ####FIX
         # assert_equal(len(results1), len(results2)) ####FIX
 
 
@@ -338,6 +339,14 @@ def test_first_level_models_from_bids():
         assert_true(len(models) == len(m_imgs))
         assert_true(len(models) == len(m_events))
         assert_true(len(models) == len(m_confounds))
+        # test repeated run tag error when run tag is in filenames
+        # can arise when variant or space is present and not specified
+        assert_raises(ValueError, first_level_models_from_bids,
+                      bids_path, 'main', 'T1w')  # variant not specified
+        # test more than one ses file error when run tag is not in filenames
+        # can arise when variant or space is present and not specified
+        assert_raises(ValueError, first_level_models_from_bids,
+                      bids_path, 'localizer', 'T1w')  # variant not specified
         # test issues with confound files. There should be only one confound
         # file per img. An one per image or None. Case when one is missing
         confound_files = get_bids_files(os.path.join(bids_path, 'derivatives'),
@@ -345,7 +354,6 @@ def test_first_level_models_from_bids():
         os.remove(confound_files[-1])
         assert_raises(ValueError, first_level_models_from_bids,
                       bids_path, 'main', 'MNI')
-
         # test issues with event files
         events_files = get_bids_files(bids_path, file_tag='events')
         os.remove(events_files[0])
@@ -358,10 +366,45 @@ def test_first_level_models_from_bids():
         assert_raises(ValueError, first_level_models_from_bids,
                       bids_path, 'main', 'MNI')
 
-        # check runs are not repeated in obtained files
         # In case different variant and spaces exist and are not selected we
         # fail and ask for more specific information
         shutil.rmtree(os.path.join(bids_path, 'derivatives'))
         # issue if no derivatives folder is present
         assert_raises(ValueError, first_level_models_from_bids,
                       bids_path, 'main', 'MNI')
+
+        # check runs are not repeated when ses field is not used
+        shutil.rmtree(bids_path)
+        bids_path = create_fake_bids_dataset(n_sub=10, n_ses=1,
+                                             tasks=['localizer', 'main'],
+                                             n_runs=[1, 3], no_session=True)
+        # test repeated run tag error when run tag is in filenames and not ses
+        # can arise when variant or space is present and not specified
+        assert_raises(ValueError, first_level_models_from_bids,
+                      bids_path, 'main', 'T1w')  # variant not specified
+
+
+def test_first_level_models_with_no_signal_scaling():
+    """
+    test to ensure that the FirstLevelModel works correctly with a
+    signal_scaling==False. In particular, that derived theta are correct for a
+    constant design matrix with a single valued fmri image
+    """
+    shapes, rk = [(3, 1, 1, 2)], 1
+    fmri_data = list()
+    design_matrices = list()
+    design_matrices.append(pd.DataFrame(np.ones((shapes[0][-1], rk)),
+                                        columns=list('abcdefghijklmnopqrstuvwxyz')[:rk]))
+    first_level_model = FirstLevelModel(mask=False, noise_model='ols', signal_scaling=False)
+    fmri_data.append(Nifti1Image(np.zeros((1, 1, 1, 2)) + 6, np.eye(4)))
+
+    first_level_model.fit(fmri_data, design_matrices=design_matrices)
+    # trivial test of signal_scaling value
+    assert_true(first_level_model.signal_scaling is False)
+    # assert that our design matrix has one constant
+    assert_true(first_level_model.design_matrices_[0].equals(
+        pd.DataFrame([1.0, 1.0], columns=['a'])))
+    # assert that we only have one theta as there is only on voxel in our image
+    assert_true(first_level_model.results_[0][0].theta.shape == (1, 1))
+    # assert that the theta is equal to the one voxel value
+    assert_almost_equal(first_level_model.results_[0][0].theta[0, 0], 6.0, 2)

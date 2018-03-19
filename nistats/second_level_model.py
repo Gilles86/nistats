@@ -137,7 +137,7 @@ class SecondLevelModel(BaseEstimator, TransformerMixin, CacheMixin):
             order inconsistencies when extracting the maps. So the rows of the
             automatically computed design matrix, if not provided, will
             correspond to the sorted subject_label column.
-
+ 
             If list of Niimg-like objects then this is taken literally as Y
             for the model fit and design_matrix must be provided.
 
@@ -244,7 +244,13 @@ class SecondLevelModel(BaseEstimator, TransformerMixin, CacheMixin):
         # sort a pandas dataframe by subject_label to avoid inconsistencies
         # with the design matrix row order when automatically extracting maps
         if isinstance(second_level_input, pd.DataFrame):
-            sorted_input = second_level_input.sort('subject_label')
+            # Avoid pandas df.sort_value to keep compatibility with numpy 1.8
+            # also pandas df.sort since it is completely deprecated.
+            columns = second_level_input.columns.tolist()
+            column_index = columns.index('subject_label')
+            sorted_matrix = sorted(
+                second_level_input.as_matrix(), key=lambda x: x[column_index])
+            sorted_input = pd.DataFrame(sorted_matrix, columns=columns)
             second_level_input = sorted_input
 
         self.second_level_input_ = second_level_input
@@ -419,6 +425,6 @@ class SecondLevelModel(BaseEstimator, TransformerMixin, CacheMixin):
         # Prepare the returned images
         output = self.masker_.inverse_transform(estimate_)
         contrast_name = str(con_val)
-        output.get_header()['descrip'] = (
+        output.header['descrip'] = (
             '%s of contrast %s' % (output_type, contrast_name))
         return output
