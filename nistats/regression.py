@@ -284,14 +284,14 @@ class RegressionResults(LikelihoodModelResults):
         self.wresid = wresid
         self.wdesign = model.wdesign
 
-    @property
+    @setattr_on_read
     def resid(self):
         """
         Residuals from the fit.
         """
         return self.Y - self.predicted
 
-    @property
+    @setattr_on_read
     def norm_resid(self):
         """
         Residuals, normalized to have unit length.
@@ -311,7 +311,7 @@ class RegressionResults(LikelihoodModelResults):
         """
         return self.resid * positive_reciprocal(np.sqrt(self.dispersion))
 
-    @property
+    @setattr_on_read
     def predicted(self):
         """ Return linear predictor values from a design matrix.
         """
@@ -369,22 +369,15 @@ class SimpleRegressionResults(RegressionResults):
         """
         raise ValueError('minimize_memory should be set to False to make residuals or predictions.')
 
-    @setattr_on_read
     def resid(self):
         """
         Residuals from the fit.
         """
         raise ValueError('minimize_memory should be set to False to make residuals or predictions.')
 
-    @setattr_on_read
     def norm_resid(self):
         raise ValueError('minimize_memory should be set to False to make residuals or predictions.')
 
-    @setattr_on_read
-    def norm_resid(self, Y):
-        raise ValueError('minimize_memory should be set to False to make residuals or predictions.')
-
-    @setattr_on_read
     def predicted(self):
         """ Return linear predictor values from a design matrix.
         """
