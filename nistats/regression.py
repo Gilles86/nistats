@@ -282,15 +282,16 @@ class RegressionResults(LikelihoodModelResults):
                                         dispersion, nuisance)
         self.wY = wY
         self.wresid = wresid
+        self.wdesign = model.wdesign
 
-    @setattr_on_read
+    @property
     def resid(self):
         """
         Residuals from the fit.
         """
         return self.Y - self.predicted
 
-    @setattr_on_read
+    @property
     def norm_resid(self):
         """
         Residuals, normalized to have unit length.
@@ -310,28 +311,28 @@ class RegressionResults(LikelihoodModelResults):
         """
         return self.resid * positive_reciprocal(np.sqrt(self.dispersion))
 
-    @setattr_on_read
+    @property
     def predicted(self):
         """ Return linear predictor values from a design matrix.
         """
         beta = self.theta
         # the LikelihoodModelResults has parameters named 'theta'
-        X = self.model.design
+        X = self.wdesign
         return np.dot(X, beta)
 
-    @setattr_on_read
+    @property
     def SSE(self):
         """Error sum of squares. If not from an OLS model this is "pseudo"-SSE.
         """
         return (self.wresid ** 2).sum(0)
 
-    @setattr_on_read
+    @property
     def MSE(self):
         """ Mean square (error) """
         return self.SSE / self.df_resid
 
 
-class SimpleRegressionResults(LikelihoodModelResults):
+class SimpleRegressionResults(RegressionResults):
     """This class contains only information of the model fit necessary
     for contast computation.
 
@@ -352,6 +353,8 @@ class SimpleRegressionResults(LikelihoodModelResults):
         self.df_model = results.model.df_model
         # put this as a parameter of LikelihoodModel
         self.df_resid = self.df_total - self.df_model
+
+        self.wdesign = results.model.wdesign
 
     def logL(self, Y):
         """
