@@ -67,7 +67,6 @@ class OLSModel(object):
     df_resid : scalar
         Degrees of freedom of the residuals.  Number of observations less the
         rank of the design.
-
     df_model : scalar
         Degrees of freedome of the model.  The rank of the design.
     """
@@ -377,11 +376,3 @@ class SimpleRegressionResults(RegressionResults):
 
     def norm_resid(self):
         raise ValueError('minimize_memory should be set to False to make residuals or predictions.')
-
-    def predicted(self):
-        """ Return linear predictor values from a design matrix.
-        """
-        beta = self.theta
-        # the LikelihoodModelResults has parameters named 'theta'
-        X = self.model.design
-        return np.dot(X, beta)
