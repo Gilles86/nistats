@@ -4,7 +4,7 @@ Test functions for models.regression
 
 import numpy as np
 
-from nistats.regression import OLSModel, ARModel
+from nistats.regression import OLSModel, ARModel, SimpleRegressionResults
 
 from nose.tools import assert_equal, assert_true
 from numpy.testing import assert_array_almost_equal, assert_array_equal
@@ -41,3 +41,13 @@ def test_AR_degenerate():
     model = ARModel(design=Xd, rho=0.9)
     results = model.fit(Y)
     assert_equal(results.df_resid, 31)
+
+def test_simple_results():
+    model = OLSModel(X)
+    results = model.fit(Y)
+    residfull = results.resid
+    predictedfull = results.predicted
+    
+    simple_results = SimpleRegressionResults(results)
+    assert_array_equal(results.predicted, simple_results.predicted(X))
+    assert_array_equal(results.resid, simple_results.resid(Y, X))

@@ -357,15 +357,17 @@ class SimpleRegressionResults(LikelihoodModelResults):
         """
         The maximized log-likelihood
         """
-        raise ValueError('can not use this method for simple results')
+        raise NotImplementedError('logL not implemented for '
+                                  'SimpleRegressionsResults. '
+                                  'Use RegressionResults')
 
-    def resid(self, Y):
+    def resid(self, Y, X):
         """
         Residuals from the fit.
         """
-        return Y - self.predicted
+        return Y - self.predicted(X)
 
-    def norm_resid(self, Y):
+    def norm_resid(self, Y, X):
         """
         Residuals, normalized to have unit length.
 
@@ -382,12 +384,11 @@ class SimpleRegressionResults(LikelihoodModelResults):
         See: Montgomery and Peck 3.2.1 p. 68
              Davidson and MacKinnon 15.2 p 662
         """
-        return self.resid(Y) * positive_reciprocal(np.sqrt(self.dispersion))
+        return self.resid(Y, X) * positive_reciprocal(np.sqrt(self.dispersion))
 
-    def predicted(self):
+    def predicted(self, X):
         """ Return linear predictor values from a design matrix.
         """
         beta = self.theta
         # the LikelihoodModelResults has parameters named 'theta'
-        X = self.model.design
         return np.dot(X, beta)
